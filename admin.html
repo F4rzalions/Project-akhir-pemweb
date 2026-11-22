@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Traffic — Admin</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-logo"><i data-lucide="traffic-cone"></i></span>
+      <span>SMART <b>TRAFFIC</b> — ADMIN</span>
+    </a>
+    <nav class="top-actions" style="margin-left:auto">
+      <button id="reset" class="icon-btn" title="Reset data simulasi (hapus juga laporan pengguna)"><i data-lucide="rotate-ccw"></i></button>
+      <a href="index.html" class="pill"><i data-lucide="map"></i><span>Lihat Peta</span></a>
+      <span id="user-chip" class="user-chip"></span>
+      <button id="logout" class="icon-btn" title="Keluar"><i data-lucide="log-out"></i></button>
+    </nav>
+  </header>
+
+  <main class="admin-main">
+    <h1>Validasi Informasi</h1>
+    <p class="muted">Informasi yang disetujui akan tampil di peta. Perubahan disimpan di browser ini (LocalStorage).</p>
+    <div class="tabs" role="tablist">
+      <button data-tab="pending">Menunggu <span class="count">0</span></button>
+      <button data-tab="approved">Disetujui <span class="count">0</span></button>
+      <button data-tab="rejected">Ditolak <span class="count">0</span></button>
+    </div>
+    <section id="admin-list" class="admin-list"></section>
+  </main>
+
+  <dialog id="detail-dialog" class="info-dialog">
+    <div class="detail-body"></div>
+    <button id="dialog-close" class="btn btn--primary">Tutup</button>
+  </dialog>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="assets/js/util.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/traffic.js"></script>
+  <script src="assets/js/detail.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>
