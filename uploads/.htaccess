@@ -1,0 +1,5 @@
+# Folder foto: jangan jalankan file PHP/skrip di sini.
+Options -Indexes
+<FilesMatch "\.(php|phtml|phar|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>

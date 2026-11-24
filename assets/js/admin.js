@@ -1,23 +1,24 @@
-// Admin validation page.
-(async () => {
+// Halaman admin: validasi (setujui/tolak), edit, dan hapus laporan
+(() => {
   const $ = s => document.querySelector(s);
-  if (!Auth.mount("admin")) return;
-
   const list = $("#admin-list");
   const dialog = $("#detail-dialog");
-  let tab = "pending";
+  // Tab aktif diambil dari URL (?status=...), default "pending"
+  let tab = new URLSearchParams(location.search).get("status") || "pending";
 
-  try {
-    await Traffic.load();
-  } catch (err) {
-    list.innerHTML = `<p class="empty">${err.message}</p>`;
-    console.error(err);
-    icons();
-    return;
-  }
-
+  // [status tujuan, label tombol, gaya tombol]
   const ACTIONS = [["approved", "Setujui", "ok"], ["rejected", "Tolak", "no"]];
 
+  // Form POST ke admin.php; confirmText diisi jika butuh konfirmasi
+  const actionForm = (i, aksi, label, kind, confirmText = "") => `
+    <form method="post" action="admin.php" data-confirm="${esc(confirmText)}">
+      <input type="hidden" name="id" value="${i.id}">
+      <input type="hidden" name="aksi" value="${aksi}">
+      <input type="hidden" name="status" value="${tab}">
+      <button class="btn btn--${kind}">${label}</button>
+    </form>`;
+
+  // Gambar ulang jumlah di tab dan daftar kartu sesuai tab aktif
   function render() {
     const counts = Traffic.countBy("status");
     document.querySelectorAll("[data-tab]").forEach(b => {
@@ -39,33 +40,39 @@
           <p>Status: <span class="status status--${i.status}">${Traffic.VALIDATION[i.status]}</span> · ${Traffic.formatTime(i.updatedAt)}</p>
         </div>
         <div class="card-actions">
-          <button class="btn" data-act="detail" data-id="${i.id}">Lihat Detail</button>
-          ${ACTIONS.filter(([s]) => s !== i.status).map(([s, label, kind]) =>
-            `<button class="btn btn--${kind}" data-act="${s}" data-id="${i.id}">${label}</button>`).join("")}
+          <button class="btn" data-detail="${i.id}">Lihat Detail</button>
+          <a class="btn" href="edit.php?id=${i.id}">Edit</a>
+          ${ACTIONS.filter(([s]) => s !== i.status).map(([s, label, kind]) => actionForm(i, s, label, kind)).join("")}
+          ${actionForm(i, "hapus", "Hapus", "no", `Hapus "${i.name}"? Data dan fotonya akan dihapus permanen.`)}
         </div>
       </article>`;
     }).join("") : `<p class="empty">Tidak ada informasi dengan status "${Traffic.VALIDATION[tab]}".</p>`;
     icons();
   }
 
-  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+  // Ganti tab tanpa reload halaman
+  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => {
+    tab = b.dataset.tab;
+    history.replaceState(null, "", `?status=${tab}`);
+    render();
+  });
 
+  // Tombol "Lihat Detail" membuka dialog
   list.addEventListener("click", e => {
-    const b = e.target.closest("button[data-act]");
+    const b = e.target.closest("[data-detail]");
     if (!b) return;
-    const item = Traffic.byId(+b.dataset.id);
-    if (b.dataset.act === "detail") {
-      $("#detail-dialog .detail-body").innerHTML = TrafficDetail.html(item);
-      icons();
-      dialog.showModal();
-    } else {
-      Traffic.setStatus(item.id, b.dataset.act);
-      render();
-    }
+    $("#detail-dialog .detail-body").innerHTML = TrafficDetail.html(Traffic.byId(+b.dataset.detail));
+    icons();
+    dialog.showModal();
+  });
+
+  // Batalkan submit jika konfirmasi ditolak
+  list.addEventListener("submit", e => {
+    const text = e.target.dataset.confirm;
+    if (text && !confirm(text)) e.preventDefault();
   });
 
   $("#dialog-close").onclick = () => dialog.close();
-  $("#reset").onclick = () => { Traffic.reset(); render(); };
 
   render();
 })();

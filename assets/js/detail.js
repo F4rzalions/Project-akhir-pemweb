@@ -1,5 +1,6 @@
-// Detail panel (sidebar on desktop, bottom sheet on mobile). Shared with admin page.
+//membuat HTML detail item dan buka tutup panel
 const TrafficDetail = (() => {
+  // detail badge lampu level foto daftar informasi
   function html(item) {
     const cat = Traffic.CATEGORIES[item.type];
     let badge = "";
@@ -17,6 +18,7 @@ const TrafficDetail = (() => {
         <div><small>${cat.title}</small><h3>${esc(item.name)}</h3></div>
       </div>
       ${badge}
+      ${item.photo ? `<a href="${esc(item.photo)}" target="_blank" rel="noopener"><img class="detail-photo" src="${esc(item.photo)}" alt="Foto ${esc(item.name)}" loading="lazy"></a>` : ""}
       <dl class="detail-list">
         <dt>Lokasi</dt><dd>${esc(item.location || "-")}</dd>
         <dt>Status</dt><dd>${esc(Traffic.statusText(item))}</dd>
@@ -29,6 +31,7 @@ const TrafficDetail = (() => {
       </dl>`;
   }
 
+  // Isi dan tampilkan panel
   function open(panel, item) {
     panel.querySelector(".detail-body").innerHTML = html(item);
     panel.classList.add("open");

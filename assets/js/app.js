@@ -1,11 +1,10 @@
-// Main map page bootstrap.
-(async () => {
+// Halaman utama (peta publik): filter, pencarian, form laporan, dan kontrol peta
+(() => {
   const $ = s => document.querySelector(s);
-  const user = Auth.mount();
-  if (!user) return;
 
   const panel = $("#detail");
   const filterBox = $("#filters");
+  // Notifikasi singkat yang hilang otomatis setelah 3,2 detik
   const toast = msg => {
     const t = $("#toast");
     t.textContent = msg;
@@ -15,9 +14,7 @@
   };
   const { CATEGORIES, LEVELS } = Traffic;
 
-  $("#admin-link").hidden = user.role !== "admin";
-
-  // Filter checkboxes and legend are generated from the category / level tables.
+  // Checkbox filter kategori + legenda level kepadatan
   filterBox.innerHTML = Object.entries(CATEGORIES).map(([type, c]) => `
     <label class="filter-item">
       <input type="checkbox" value="${type}" checked>
@@ -29,23 +26,18 @@
   $("#legend").innerHTML = Object.values(LEVELS).map(l =>
     `<li><span class="${l.style.dashArray ? "dashed" : ""}" style="--c:${l.style.color}"></span>${l.label}</li>`).join("");
 
+  // Inisialisasi peta, gambar marker, dan isi jumlah per kategori
   TrafficMap.init("map");
   const select = item => { TrafficDetail.open(panel, item); TrafficMap.focus(item); };
 
-  try {
-    await Traffic.load();
-  } catch (err) {
-    toast(err.message);
-    console.error(err);
-  }
-  const updatePending = () => { $("#pending-count").textContent = Traffic.countBy("status").pending || ""; };
   const items = Traffic.visible();
   const counts = Traffic.countBy("type", items);
-  TrafficMap.render(items, select); // also renders every static icon on the page
+  TrafficMap.render(items, select); 
   filterBox.querySelectorAll("[data-count]").forEach(el => { el.textContent = counts[el.dataset.count] || 0; });
-  updatePending();
 
-  // Controls
+  if (APP.pesan) toast(APP.pesan);
+
+  // Tombol kontrol peta, panel, dan shortcut Esc
   $("#zoom-in").onclick = TrafficMap.zoomIn;
   $("#zoom-out").onclick = TrafficMap.zoomOut;
   $("#home").onclick = TrafficMap.home;
@@ -59,23 +51,22 @@
     TrafficMap.cancelPick();
   });
 
-  // Info dialog
   const info = $("#info-dialog");
   $("#info-btn").onclick = () => info.showModal();
   $("#info-close").onclick = () => info.close();
 
-  // Report: pick a point on the map, then fill the form. Enters the admin queue as pending.
+  // Form lapor: pilih titik di peta lalu isi form (foto maks 2 MB)
   const reportDialog = $("#report-dialog");
   const form = $("#report-form");
   const options = (entries) => entries.map(([v, x]) => `<option value="${v}">${x.label}</option>`).join("");
   form.type.innerHTML = options(Object.entries(CATEGORIES).filter(([t]) => t !== "traffic_light"));
   form.level.innerHTML = options(Object.entries(LEVELS).filter(([l]) => l !== "smooth" && l !== "closed"));
-  let point;
   $("#report-btn").onclick = () => {
     toast("Klik titik lokasi di peta (Esc untuk batal).");
     TrafficMap.pick(ll => {
-      point = ll;
       form.reset();
+      form.latitude.value = ll.lat;
+      form.longitude.value = ll.lng;
       $("#level-field").hidden = true;
       $("#report-point").textContent = `Titik: ${ll.lat.toFixed(4)}, ${ll.lng.toFixed(4)}`;
       reportDialog.showModal();
@@ -83,22 +74,15 @@
   };
   form.type.onchange = () => { $("#level-field").hidden = form.type.value !== "traffic_congestion"; };
   $("#report-cancel").onclick = () => reportDialog.close();
-  form.addEventListener("submit", () => {
-    Traffic.addReport({
-      type: form.type.value,
-      level: form.type.value === "traffic_congestion" ? form.level.value : undefined,
-      name: form.name.value.trim(),
-      location: form.location.value.trim(),
-      description: form.description.value.trim(),
-      latitude: point.lat,
-      longitude: point.lng,
-      reportedBy: user.username
-    });
-    updatePending(); // a new report is pending, so the map itself doesn't change
-    toast("Laporan terkirim, menunggu validasi admin.");
+  form.addEventListener("submit", e => {
+    const photo = form.photo.files[0];
+    if (photo && photo.size > 2 * 1024 * 1024) {
+      e.preventDefault();
+      alert("Ukuran foto maksimal 2 MB.");
+    }
   });
 
-  // Search
+  // Pencarian berdasarkan nama/lokasi (maks 6 hasil)
   const input = $("#search");
   const results = $("#search-results");
   input.addEventListener("input", () => {

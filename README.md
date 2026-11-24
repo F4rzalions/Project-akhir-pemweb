@@ -1,39 +1,52 @@
 # Smart Traffic Information System
 
-Prototype peta informasi lalu lintas wilayah D.I. Yogyakarta (Leaflet + OpenStreetMap, data simulasi, validasi admin via LocalStorage). Peta dikunci ke batas DIY; area di luar Yogyakarta digelapkan dan tidak bisa digeser keluar.
+Peta informasi lalu lintas wilayah D.I. Yogyakarta (Leaflet + OpenStreetMap) dengan PHP native + MySQL.
+Data, akun, dan laporan disimpan di database; admin memvalidasi laporan sebelum tampil di peta.
 
-## Menjalankan
+## Cara menjalankan (XAMPP)
 
-Data dimuat dengan `fetch`, jadi buka lewat server lokal (bukan double-click `file://`):
+1. Salin folder project ke `C:\xampp\htdocs\smart-traffic`.
+2. Buka **XAMPP Control Panel**, jalankan **Apache** dan **MySQL**.
+3. Buka `http://localhost/phpmyadmin` → tab **Import** → pilih file `database.sql` → **Import**.
+   File ini membuat database `smart_traffic` (beserta tabel dan data awal). Import ulang akan mereset semua data.
+4. Buka `http://localhost/smart-traffic/` di browser.
 
-```bash
-npx serve .            # lalu buka http://localhost:3000
-# atau: python -m http.server 8000
-# atau: salin folder ke C:\xampp\htdocs dan buka http://localhost/smart-traffic-system
-# atau: VS Code "Live Server"
-```
+Koneksi database ada di `koneksi.php` (default XAMPP: user `root`, tanpa password).
+Butuh internet untuk tile peta, Leaflet, dan ikon Lucide (CDN).
 
-Butuh koneksi internet untuk tile peta, Leaflet, dan ikon Lucide (CDN).
+## Akun demo
 
-## Halaman
-
-- `login.html` — masuk / daftar akun.
-- `index.html` — peta, filter kategori, legenda, detail informasi, pencarian, tombol **Lapor**.
-- `admin.html` — validasi informasi (Setujui / Tolak), khusus admin. Tombol ↺ mengembalikan data ke kondisi awal (laporan pengguna ikut terhapus).
-
-## Akun & role
-
-| Role | Akun demo | Hak akses |
-|------|-----------|-----------|
-| Admin | `admin` / `admin123` | Lihat peta, kirim laporan, halaman validasi |
+| Role | Username / Password | Hak akses |
+|------|---------------------|-----------|
+| Admin | `admin` / `admin123` | Lihat peta, kirim laporan, validasi & kelola data (CRUD) |
 | Pengguna | `user` / `user123` | Lihat peta, kirim laporan (status *pending* sampai disetujui admin) |
 
-Pendaftaran lewat `login.html` selalu membuat akun **Pengguna**. Akun, sesi, dan laporan disimpan di LocalStorage browser — ini hanya simulasi login untuk prototype, **tidak aman** (password tersimpan polos dan bisa dilewati lewat DevTools). Untuk produksi, autentikasi dan otorisasi harus di server.
+Pendaftaran lewat halaman login selalu membuat akun **Pengguna**.
 
-## Data
+## Struktur folder
 
-`data/traffic-data.json` berisi lampu lalu lintas (`light`: red/yellow/green) dan kondisi jalan.
-Field `status` (pending/approved/rejected) adalah status validasi; hanya `approved` yang tampil di peta.
-Item kemacetan/penutupan dapat memiliki `path` (array `[lat, lng]`) untuk digambar sebagai garis; `level` kemacetan: smooth, slow, heavy, congested.
+```
+smart-traffic/
+├── database.sql      struktur tabel + data awal (import di phpMyAdmin)
+├── koneksi.php       koneksi mysqli, session, fungsi bantu (cek login, upload foto)
+├── login.php         form masuk & daftar
+├── logout.php        hapus session -> login.php
+├── index.php         peta + simpan laporan (form Lapor)
+├── admin.php         daftar data per status + aksi Setujui / Tolak / Hapus
+├── tambah.php        tambah data (memakai form di edit.php)
+├── edit.php          form tambah / ubah data
+├── uploads/          foto laporan (.htaccess mencegah file PHP dijalankan)
+└── assets/
+    ├── css/          style.css, auth.css, admin.css
+    └── js/           util.js, traffic.js, map.js, detail.js, app.js, admin.js
+```
+
+## Alur data
+
+- PHP mengambil data dari database lalu mengirimnya ke JavaScript lewat `json_encode` di tag `<script>` (variabel `APP`).
+  `index.php` hanya mengirim data berstatus `approved`; `admin.php` mengirim semua data.
+- Form **Lapor** dikirim (POST) ke `index.php`, disimpan dengan status `pending`. Boleh melampirkan 1 foto JPG/PNG maks. 2 MB.
+- Aksi admin memakai form POST biasa lalu redirect kembali ke `admin.php`.
+- Kolom `path` berisi garis jalan (JSON `[[lat, lng], ...]`) untuk kemacetan/penutupan jalan.
 
 Seluruh data adalah **simulasi** dan bukan kondisi lalu lintas aktual.

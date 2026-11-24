@@ -1,12 +1,12 @@
-// Leaflet map setup, markers and road polylines.
+// marker, jalur, geolokasi, dan pemilihan titik
 const TrafficMap = (() => {
-  const HOME = [-7.7626, 110.4087]; // UPN "Veteran" Yogyakarta
+  const HOME = [-7.7626, 110.4087]; // UPNYK
   const HOME_ZOOM = 15;
-  // Daerah Istimewa Yogyakarta (approximate bounding box). The map cannot leave this area.
-  const BOUNDS = L.latLngBounds([-8.21, 110.0], [-7.54, 110.85]);
+  const BOUNDS = L.latLngBounds([-8.21, 110.0], [-7.54, 110.85]); // batas wilayah Yogyakarta
   let map;
-  const layers = {};
+  const layers = {}; // satu layer group per kategori, untuk filter
 
+  // Buat peta, tile OSM, mask di luar batas wilayah, dan layer per kategori
   function init(el) {
     map = L.map(el, {
       zoomControl: false,
@@ -20,7 +20,6 @@ const TrafficMap = (() => {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Grey out everything outside Yogyakarta: a world-sized ring with the region as a hole.
     const b = BOUNDS;
     L.polygon([
       [[-90, -180], [-90, 180], [90, 180], [90, -180]],
@@ -36,6 +35,7 @@ const TrafficMap = (() => {
     Object.keys(Traffic.CATEGORIES).forEach(t => { layers[t] = L.layerGroup().addTo(map); });
   }
 
+  // Ikon marker; warna lampu mengikuti fase lampunya
   function markerIcon(item) {
     const cat = Traffic.CATEGORIES[item.type];
     const color = item.type === "traffic_light" ? Traffic.LIGHTS[item.light]?.color || cat.color : cat.color;
@@ -47,6 +47,7 @@ const TrafficMap = (() => {
     });
   }
 
+  // Gambar ulang marker (dan jalur jika ada) ke layer kategorinya
   function render(items, onSelect) {
     Object.values(layers).forEach(l => l.clearLayers());
     items.forEach(item => {
@@ -64,18 +65,20 @@ const TrafficMap = (() => {
     icons();
   }
 
-  // Leaflet rebuilds divIcon DOM when a layer is re-added, so icons need a refresh.
+  // Tampilkan/sembunyikan satu kategori
   function setCategoryVisible(type, show) {
     show ? map.addLayer(layers[type]) : map.removeLayer(layers[type]);
     if (show) icons();
   }
 
+  // Kontrol navigasi peta
   const zoomIn = () => map.zoomIn();
   const zoomOut = () => map.zoomOut();
   const home = () => map.flyTo(HOME, HOME_ZOOM);
   const overview = () => map.flyToBounds(BOUNDS);
   const focus = item => map.flyTo([item.latitude, item.longitude], 17);
 
+  // Tandai posisi pengguna (hanya jika di dalam wilayah)
   let userMarker;
   function locate(onError) {
     if (!navigator.geolocation) return onError("Browser tidak mendukung geolokasi.");
@@ -91,7 +94,7 @@ const TrafficMap = (() => {
     );
   }
 
-  // One-shot "click the map to choose a point" mode, used by the report form.
+  // Mode pilih titik: klik peta berikutnya dikirim ke onPick
   let pickHandler;
   function pick(onPick, onError) {
     cancelPick();

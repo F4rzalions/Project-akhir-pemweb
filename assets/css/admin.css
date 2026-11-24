@@ -138,3 +138,57 @@
     flex: 1;
   }
 }
+
+/* Header admin + tombol Tambah Data */
+.admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.admin-head p {
+  margin: 0;
+}
+.admin-head .btn,
+.card-actions a.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.card-actions form {
+  display: contents;
+}
+
+/* Form tambah / edit */
+.form-card {
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-error {
+  min-height: 18px;
+  margin: 0 0 8px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+.photo-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.photo-current img {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+}

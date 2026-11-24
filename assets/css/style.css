@@ -676,3 +676,13 @@ svg.lucide {
     display: none;
   }
 }
+
+/* Foto laporan di panel detail */
+.detail-photo {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 6px 0 10px;
+}
